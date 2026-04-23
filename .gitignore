@@ -1,0 +1,47 @@
+# Secrets — NE JAMAIS commiter
+.env
+*.key
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+
+# Data engineering
+output/*.xlsx
+monitoring/*.json
+monitoring/*.log
+data/*.xlsx
+data/*.csv
+data/geocoding_cache.json
+
+# Claude Code (local)
+.claude/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker volumes
+pg_data/
+pgadmin_data/
+
+# Tests
+htmlcov/
+.coverage
+coverage.xml
+
+# AUDIT (notes personnelles)
+AUDIT/
+
+# Artefacts build
+node_modules/

@@ -1,0 +1,57 @@
+# Git / IDE
+.git
+.gitignore
+.github
+.vscode
+.idea
+
+# Secrets — ne jamais embarquer dans l'image
+.env
+.env.*
+!.env.example
+*.key
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+htmlcov/
+.coverage
+coverage.xml
+
+# Artefacts pipeline (montés en volume à l'exécution)
+output/*.xlsx
+monitoring/*.json
+monitoring/*.log
+data/geocoding_cache.json
+
+# Docs et supports
+docs/
+*.md
+*.pptx
+
+# Tests (le conteneur runtime n'en a pas besoin)
+tests/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.yml
+Dockerfile
+.dockerignore
+
+# Volumes de persistance locaux
+pg_data/
+pgadmin_data/
+
+# Orchestration (non utilisée dans l'image runner)
+orchestration/
+
+# Audit
+AUDIT/

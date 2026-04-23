@@ -1,0 +1,140 @@
+# ═══════════════════════════════════════════════════════════════════════
+#  Sport Data Solution — Infrastructure locale v3.1.0
+#
+#  Services :
+#    postgres       — base de données principale (port 5432)
+#    pgadmin        — UI d'administration PostgreSQL (port 5050)
+#    kestra         — orchestrateur du pipeline (port 8089)
+#    sds-pipeline   — image runnable (buildée à la demande)
+#
+#  Commandes utiles :
+#    docker compose up -d postgres pgadmin kestra
+#    docker compose build sds-pipeline
+# ═══════════════════════════════════════════════════════════════════════
+services:
+
+  # ═══ Base de données PostgreSQL ═══════════════════════════════════════
+  postgres:
+    image: postgres:16-alpine
+    container_name: sds_postgres
+    restart: unless-stopped
+    networks: [sds_network]
+    environment:
+      POSTGRES_DB:          ${POSTGRES_DB:-sds_poc}
+      POSTGRES_USER:        ${POSTGRES_USER:-sds}
+      POSTGRES_PASSWORD:    ${POSTGRES_PASSWORD:-changeme_in_env}
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./sql:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sds} -d ${POSTGRES_DB:-sds_poc}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ═══ pgAdmin — UI d'admin BDD ═════════════════════════════════════════
+  pgadmin:
+    image: dpage/pgadmin4:8.13
+    container_name: sds_pgadmin
+    restart: unless-stopped
+    networks: [sds_network]
+    environment:
+      PGADMIN_DEFAULT_EMAIL:      ${PGADMIN_EMAIL:-admin@sds.local}
+      PGADMIN_DEFAULT_PASSWORD:   ${PGADMIN_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    ports:
+      - "5050:80"
+    depends_on:
+      postgres: { condition: service_healthy }
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+  # ═══ Kestra — orchestrateur du pipeline ═══════════════════════════════
+  kestra:
+    image: kestra/kestra:v0.20.11
+    container_name: sds_kestra
+    restart: unless-stopped
+    networks: [sds_network]
+    command: server standalone
+    user: "root"                       # requis pour monter le socket Docker
+    ports:
+      - "8089:8080"                    # UI Kestra : http://localhost:8089
+    environment:
+      TZ: Europe/Paris
+      DATABASE_URL: ${KESTRA_DATABASE_URL}
+      GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:-}
+      SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL:-}
+      SLACK_ALERTS_WEBHOOK_URL: ${SLACK_ALERTS_WEBHOOK_URL:-}
+      PROJECT_PATH: ${PROJECT_PATH}
+      database_url: ${KESTRA_DATABASE_URL}
+      database_url_jdbc: ${KESTRA_DATABASE_URL_JDBC}
+      postgres_user: ${POSTGRES_USER:-sds}
+      postgres_password: ${POSTGRES_PASSWORD:-}
+      google_maps_api_key: ${GOOGLE_MAPS_API_KEY:-}
+      slack_webhook_url: ${SLACK_WEBHOOK_URL:-}
+      slack_alerts_webhook_url: ${SLACK_ALERTS_WEBHOOK_URL:-}
+      project_path: ${PROJECT_PATH}
+      KESTRA_CONFIGURATION: |
+        kestra:
+          plugins:
+            configurations:
+              - type: io.kestra.plugin.scripts.runner.docker.Docker
+                values:
+                  volume-enabled: true
+          queue:      { type: h2 }
+          repository: { type: h2 }
+          storage:
+            type: local
+            local: { base-path: /app/storage }
+          variables:
+            globals:
+              database_url:             "${KESTRA_DATABASE_URL}"
+              database_url_jdbc:        "${KESTRA_DATABASE_URL_JDBC}"
+              postgres_user:            "${POSTGRES_USER:-sds}"
+              postgres_password:        "${POSTGRES_PASSWORD:-}"
+              google_maps_api_key:      "${GOOGLE_MAPS_API_KEY:-}"
+              slack_webhook_url:        "${SLACK_WEBHOOK_URL:-}"
+              slack_alerts_webhook_url: "${SLACK_ALERTS_WEBHOOK_URL:-}"
+              project_path:             "${PROJECT_PATH}"
+          server:
+            basic-auth:
+              enabled: false
+        datasources:
+          h2:
+            url: jdbc:h2:file:/app/storage/kestra;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    volumes:
+      - kestra_data:/app/storage
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./orchestration/kestra/flows:/app/flows:ro
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  # ═══ Image runner du pipeline (buildée, pas lancée en service) ═══════
+  sds-pipeline:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: sds-pipeline:latest
+    container_name: sds_pipeline_runner
+    networks: [sds_network]
+    profiles: [build-only]
+    env_file: [.env]
+    environment:
+      DATABASE_URL: "postgresql+psycopg://${POSTGRES_USER:-sds}:${POSTGRES_PASSWORD:-changeme_in_env}@postgres:5432/${POSTGRES_DB:-sds_poc}"
+    volumes:
+      - ./output:/app/output
+      - ./monitoring:/app/monitoring
+    depends_on:
+      postgres: { condition: service_healthy }
+
+volumes:
+  pg_data:
+  pgadmin_data:
+  kestra_data:
+
+networks:
+  sds_network:
+    name: sds_network

@@ -1,0 +1,23 @@
+# ═══════════════════════════════════════════════════════════════════════
+#  Sport Data Solution — Flow de reset (démos)
+#
+#  Permet de vider les tables métier (raw.rewards, monitoring.pipeline_runs)
+#  entre deux démos, sans détruire le schéma ni les données RH.
+#
+#  Utile pour la soutenance : un run, une démonstration du reprocessing
+#  avec changement de taux, puis reset, et on recommence pour le prochain
+#  groupe de questions du jury.
+# ═══════════════════════════════════════════════════════════════════════
+id: sds_reset
+namespace: sds.poc
+description: "Vide les tables de résultats (rewards, monitoring) — ne touche pas aux données RH."
+
+tasks:
+  - id: truncate_results
+    type: io.kestra.plugin.jdbc.postgresql.Queries
+    url: "{{ globals['database-url-jdbc'] }}"       # jdbc:postgresql://postgres:5432/sds_poc
+    username: "{{ globals['postgres-user'] }}"
+    password: "{{ globals['postgres-password'] }}"
+    sql: |
+      TRUNCATE raw.rewards CASCADE;
+      TRUNCATE monitoring.pipeline_runs CASCADE;
