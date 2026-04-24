@@ -230,7 +230,8 @@ def fetch_dq_report(run_id: str) -> dict:
 
 # CLI : exit 2 si score bloquant -> Kestra marque la tache FAILED
 if __name__ == "__main__":
-    import argparse, sys
+    import argparse
+    import sys
     logging.basicConfig(level=logging.INFO, stream=sys.stdout, format="%(asctime)s | %(levelname)-8s | %(message)s")
     parser = argparse.ArgumentParser()
     parser.add_argument("--run-id", required=True)

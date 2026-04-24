@@ -97,7 +97,8 @@ def compute_rewards(run_id: str, pipeline_version: str) -> pd.DataFrame:
 
 
 if __name__ == "__main__":
-    import argparse, sys
+    import argparse
+    import sys
     logging.basicConfig(level=logging.INFO, stream=sys.stdout, format="%(asctime)s | %(levelname)-8s | %(message)s")
     from config import PIPELINE_VERSION
     parser = argparse.ArgumentParser()

@@ -136,7 +136,8 @@ def read_employees_with_sport() -> pd.DataFrame:
 
 # CLI — permet `python -m pipeline.extract --run-id XXX`
 if __name__ == "__main__":
-    import argparse, sys
+    import argparse
+    import sys
     logging.basicConfig(level=logging.INFO, stream=sys.stdout, format="%(asctime)s | %(levelname)-8s | %(message)s")
     parser = argparse.ArgumentParser()
     parser.add_argument("--run-id", required=True,

@@ -24,7 +24,7 @@ from typing import Optional, Tuple
 from sqlalchemy import text
 
 from config import (
-    DATA_DIR, COMPANY_ADDRESS, COMPANY_COORDS,
+    DATA_DIR, COMPANY_COORDS,
     SEUILS_KM, GOOGLE_MAPS_API_KEY,
 )
 from pipeline.db import get_engine
@@ -179,7 +179,8 @@ def validate_geo() -> pd.DataFrame:
 
 
 if __name__ == "__main__":
-    import argparse, sys
+    import argparse
+    import sys
     logging.basicConfig(level=logging.INFO, stream=sys.stdout, format="%(asctime)s | %(levelname)-8s | %(message)s")
     parser = argparse.ArgumentParser()
     parser.add_argument("--run-id", required=True)

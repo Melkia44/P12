@@ -201,7 +201,8 @@ def notify_run_from_db(run_id: str, n_activities_individual: int = 3) -> None:
 
 
 if __name__ == "__main__":
-    import argparse, sys
+    import argparse
+    import sys
     logging.basicConfig(level=logging.INFO, stream=sys.stdout, format="%(asctime)s | %(levelname)-8s | %(message)s")
     parser = argparse.ArgumentParser()
     parser.add_argument("--run-id", required=True)

@@ -1,9 +1,8 @@
 """Tests unitaires pour pipeline.data_quality_ge — scoring métier pondéré."""
 import pandas as pd
-import pytest
 from unittest.mock import patch
 
-from pipeline.data_quality_ge import run_business_checks, fetch_dq_report
+from pipeline.data_quality_ge import run_business_checks
 from config import DQ_THRESHOLD
 
 

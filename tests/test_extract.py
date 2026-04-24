@@ -6,7 +6,6 @@ from pipeline.extract import (
     _extract_postal_code,
     _check_source_columns,
     EXPECTED_RH_SOURCE_COLS,
-    EXPECTED_SPORT_SOURCE_COLS,
     RH_COLS_MAP,
     SPORT_COLS_MAP,
 )

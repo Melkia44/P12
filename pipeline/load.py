@@ -58,11 +58,11 @@ def export_to_excel(run_id: str, df_rewards=None, dq_report=None) -> Path:
     with pd.ExcelWriter(outpath, engine="openpyxl") as w:
         df_full.to_excel(w, sheet_name="Salariés_Complet", index=False)
 
-        (df_full[df_full["eligible_prime"] == True]
+        (df_full[df_full["eligible_prime"]]
             .sort_values("prime_amount", ascending=False)
             .to_excel(w, sheet_name="Éligibles_Prime", index=False))
 
-        (df_full[df_full["eligible_wellness"] == True]
+        (df_full[df_full["eligible_wellness"]]
             .sort_values("nb_activities", ascending=False)
             .to_excel(w, sheet_name="Éligibles_BienEtre", index=False))
 
@@ -73,16 +73,16 @@ def export_to_excel(run_id: str, df_rewards=None, dq_report=None) -> Path:
 
         # Feuille 5 — KPI synthèse, source directe du dashboard
         n_tot   = len(df_full)
-        n_prime = int((df_full["eligible_prime"] == True).sum())
-        n_be    = int((df_full["eligible_wellness"] == True).sum())
+        n_prime = int(df_full["eligible_prime"].sum())
+        n_be    = int(df_full["eligible_wellness"].sum())
         cost    = float(df_full["prime_amount"].fillna(0).sum())
         kpi = pd.DataFrame([
             ("Total salariés",             n_tot,                    "personnes"),
             ("Éligibles prime 5 %",        n_prime,                  "personnes"),
-            ("dont alertes géo exclues",   int((df_full['geo_alert_prime']==True).sum()), "personnes"),
+            ("dont alertes géo exclues",   int(df_full['geo_alert_prime'].sum()), "personnes"),
             ("Éligibles bien-être",        n_be,                     "personnes"),
             ("Éligibles DEUX avantages",
-             int(((df_full['eligible_prime']==True) & (df_full['eligible_wellness']==True)).sum()),
+             int((df_full['eligible_prime'] & df_full['eligible_wellness']).sum()),
              "personnes"),
             ("Coût total primes/an",       round(cost, 2),           "EUR"),
             ("Prime moyenne/bénéf.",
@@ -118,7 +118,8 @@ def export_to_excel(run_id: str, df_rewards=None, dq_report=None) -> Path:
 
 
 if __name__ == "__main__":
-    import argparse, sys
+    import argparse
+    import sys
     logging.basicConfig(level=logging.INFO, stream=sys.stdout, format="%(asctime)s | %(levelname)-8s | %(message)s")
     parser = argparse.ArgumentParser()
     parser.add_argument("--run-id", required=True)
