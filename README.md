@@ -223,13 +223,3 @@ Trois suites s'exécutent à chaque run sur les données en base :
 | Kestra standalone (H2) | Kestra cluster (JDBC Postgres backend, Elasticsearch) |
 | Webhook Slack | Bot Slack avec OAuth + channels dynamiques |
 | PowerBI Desktop | PowerBI Service avec refresh planifié + RLS |
-
----
-
-## Licence
-
-MIT — voir [LICENSE](./LICENSE).
-
-## Auteur
-
-Projet POC Data Engineering — Formation OpenClassrooms. Données fictives.
