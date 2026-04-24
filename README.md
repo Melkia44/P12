@@ -212,36 +212,6 @@ flowchart LR
     style Dest fill:#e8f5e9,stroke:#388e3c
 ```
 
-### Flux métier (simplifié)
-
-```mermaid
-flowchart TD
-    A[📋 Excel RH + Sport] --> B{🌍 Géocodage<br/>domicile → siège}
-    B -->|Google Maps API| C[📏 Distance Haversine]
-    B -.fallback.-> C2[🗺️ OpenStreetMap<br/>Nominatim]
-    C2 --> C
-    C --> D{📏 Distance ≤ seuil mode?}
-    D -->|✅ OK| E[🚴 Mode transport actif?]
-    D -->|❌ ALERTE| F[🚫 Exclu prime]
-    E -->|Oui| G[💰 Prime = salaire × 5%]
-    E -->|Non| H[❌ Pas de prime]
-    A --> I{🏃 Sport déclaré<br/>+ ≥15 activités/an?}
-    I -->|Oui| J[🧘 5 jours bien-être]
-    I -->|Non| K[❌ Pas de jours]
-    G & H & J & K --> L[(🗄️ raw.rewards<br/>+ row_hash MD5)]
-    L --> M[📘 Excel 8 feuilles]
-    L --> N[📊 PowerBI]
-    L --> O[💬 Slack]
-
-    style G fill:#c8e6c9,stroke:#388e3c
-    style J fill:#c8e6c9,stroke:#388e3c
-    style F fill:#ffcdd2,stroke:#d32f2f
-    style H fill:#ffcdd2,stroke:#d32f2f
-    style K fill:#ffcdd2,stroke:#d32f2f
-```
-
----
-
 ## 🛠️ Stack technique
 
 <table>
@@ -351,7 +321,6 @@ sport_data_solution/
 ├── 📁 docs/
 │   ├── SDS_Presentation_v3.pptx
 │   ├── note_de_cadrage.pdf
-│   └── SDS_Dashboard_PowerBI.html
 │
 ├── 🐳 Dockerfile                 # image sds-pipeline:latest
 ├── 🐳 docker-compose.yml         # postgres + pgadmin + kestra
@@ -373,7 +342,7 @@ sport_data_solution/
 | 🧰 Make | GNU Make | Cibles `up`, `run`, `test` |
 | 🐍 Python | 3.12 | Tests en local (optionnel) |
 
-### ⚡ Démarrage complet (recommandé — démo jury)
+### ⚡ Démarrage complet 
 
 ```bash
 # 1. Cloner & configurer
@@ -492,68 +461,6 @@ triggers:
 ```
 
 ---
-
-## 🗄️ Modèle de données
-
-```mermaid
-erDiagram
-    employees ||--o| employee_sports : "1:0..1"
-    employees ||--o{ activities : "1:N"
-    employees ||--o{ rewards : "1:N par run"
-    pipeline_runs ||--o{ rewards : "1:N par run_id"
-
-    employees {
-        varchar employee_id PK
-        varchar last_name
-        varchar first_name
-        date birth_date
-        date hire_date
-        text address
-        numeric gross_salary
-        varchar transport_mode
-        numeric distance_km
-        varchar geo_status
-    }
-
-    employee_sports {
-        varchar employee_id PK_FK
-        varchar declared_sport
-    }
-
-    activities {
-        bigint activity_id PK
-        varchar employee_id FK
-        timestamp start_date
-        timestamp end_date
-        varchar sport_type
-        integer distance_m
-        integer elapsed_seconds
-    }
-
-    rewards {
-        varchar run_id PK
-        varchar employee_id PK_FK
-        integer nb_activities
-        boolean eligible_prime
-        numeric prime_amount
-        boolean eligible_wellness
-        integer wellness_days
-        varchar reward_category
-        varchar row_hash "MD5 idempotency"
-        varchar pipeline_version
-    }
-
-    pipeline_runs {
-        varchar run_id PK
-        timestamp run_date
-        varchar status
-        integer dq_score
-        integer n_employees
-        numeric total_cost_eur
-        numeric duration_seconds
-        jsonb details_json
-    }
-```
 
 <details>
 <summary>📘 <b>Voir les 4 schémas PostgreSQL (RGPD par couches)</b></summary>
@@ -812,14 +719,6 @@ make coverage             # + rapport HTML dans htmlcov/
 
 ## 📜 Historique des versions
 
-```mermaid
-timeline
-    title Montée en maturité du POC
-    Mars 2026      : v1.0 Prototype<br/>Script unique, règles codées en dur
-    Début avril    : v2.0 Standalone<br/>run_pipeline.py + 3 modules<br/>Excel → Excel + 7 checks DQ
-    Mi-avril       : v3.0 Industrialisé<br/>PostgreSQL 3 couches RGPD<br/>Docker + tests unitaires
-    24 avril 2026  : v3.1 Orchestré<br/>Kestra + Great Expectations<br/>Inputs UI sans toucher au code
-```
 
 | Version | Date | 🚀 Apport | 📚 Ce que j'ai appris |
 |:-:|:-:|---|---|
@@ -832,26 +731,6 @@ timeline
 
 ---
 
-## 🗺️ Roadmap post-soutenance
-
-| Priorité | Évolution | Impact |
-|:-:|---|---|
-| 🔴 P1 | Google Maps Distance Matrix (distance routière) | Précision des seuils 15/25 km |
-| 🔴 P1 | CI/CD GitHub Actions (tests + ruff + couv) | Qualité code continue |
-| 🟡 P2 | Incrémental CDC (UPSERT `ON CONFLICT`) | Perf sur croissance RH |
-| 🟡 P2 | PowerBI Service + Row-Level Security par BU | Confidentialité managers |
-| 🟢 P3 | Alerting Slack sur échec Kestra | Observabilité ops |
-| 🟢 P3 | Métriques Prometheus + dashboard Grafana | Observabilité métier |
-
----
-
-## 🤝 Contributing
-
-Ce projet est un **POC académique** — les contributions externes ne sont pas attendues. Pour toute suggestion ou question sur l'architecture, ouvrir une *issue*.
-
-## 📄 License
-
-Ce projet est distribué sous licence **MIT**. Voir [`LICENSE`](LICENSE) pour plus d'informations.
 
 ## 👤 Auteur
 
