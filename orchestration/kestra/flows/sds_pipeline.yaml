@@ -8,9 +8,7 @@
 #     {{ globals['google-maps-api-key'] }} — clé géocodeur (vide = fallback OSM)
 #     {{ globals['slack-webhook-url'] }}   — webhook Slack (vide = simulation)
 #     {{ globals['project-path'] }}        — racine projet côté host
-#
-#  Paramètres métier exposés dans l'UI : Juliette peut les ajuster avant
-#  chaque exécution sans toucher au code.
+#     {{ globals['output-dir-host'] }}     — dossier de sortie côté host (partage VM↔PC)
 # ═══════════════════════════════════════════════════════════════════════
 id: sds_pipeline
 namespace: sds.poc
@@ -27,7 +25,6 @@ description: |
     7. notify_slack    — Slack individuel + récap global
     8. finalize        — UPDATE monitoring.pipeline_runs (KPI + durée)
 
-# ─── Paramètres exposés dans l'UI ───────────────────────────────────────
 inputs:
   - id: taux_prime
     type: FLOAT
@@ -49,12 +46,10 @@ inputs:
     defaults: 3
     description: "Nombre de notifications Slack individuelles envoyées en fin de run."
 
-# ─── Variables locales du flow ──────────────────────────────────────────
 variables:
   image:   "sds-pipeline:latest"
   network: "sds_network"
 
-# ─── Tâches (DAG linéaire) ──────────────────────────────────────────────
 tasks:
   - id: extract
     type: io.kestra.plugin.scripts.shell.Commands
@@ -117,7 +112,6 @@ tasks:
       DQ_THRESHOLD:     "{{ inputs.dq_threshold }}"
       PIPELINE_VERSION: "3.1.0"
     commands:
-      # stderr→stdout : tqdm (Great Expectations) écrit sur stderr, Kestra flag WARN sinon
       - python -m pipeline.data_quality_ge --run-id "{{ execution.id }}" 2>&1
 
   - id: transform
@@ -138,16 +132,17 @@ tasks:
 
   - id: load
     type: io.kestra.plugin.scripts.shell.Commands
-    description: "Écrit output/sport_rewards_v3_*.xlsx (8 feuilles)."
+    description: "Écrit sport_rewards_v3_*.xlsx (8 feuilles) dans le dossier partagé VM↔PC."
     containerImage: "{{ vars.image }}"
     taskRunner:
       type: io.kestra.plugin.scripts.runner.docker.Docker
       networkMode: "{{ vars.network }}"
       pullPolicy: IF_NOT_PRESENT
       volumes:
-        - "{{ globals['project-path'] }}/output:/app/output"
+        - "{{ globals['output-dir-host'] }}:/app/output"
     env:
       DATABASE_URL: "{{ globals['database-url'] }}"
+      OUTPUT_DIR:   "/app/output"
     commands:
       - python -m pipeline.load --run-id "{{ execution.id }}"
 
@@ -179,7 +174,6 @@ tasks:
     commands:
       - python -m pipeline.monitoring finalize --run-id "{{ execution.id }}" --duration 0
 
-# ─── Scheduling automatique ────────────────────────────────────────────
 triggers:
   - id: daily_schedule
     type: io.kestra.plugin.core.trigger.Schedule

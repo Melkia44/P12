@@ -9,11 +9,40 @@ load_dotenv(BASE_DIR / ".env")
 
 # ─── Chemins ─────────────────────────────────────────────────────────────
 DATA_DIR       = BASE_DIR / "data"
-OUTPUT_DIR     = BASE_DIR / "output"
+OUTPUT_DIR     = Path(
+    os.getenv("OUTPUT_DIR") or BASE_DIR / "output"
+).expanduser().resolve()
 MONITORING_DIR = BASE_DIR / "monitoring"
 SQL_DIR        = BASE_DIR / "sql"
 for d in (OUTPUT_DIR, MONITORING_DIR):
-    d.mkdir(exist_ok=True)
+    d.mkdir(parents=True, exist_ok=True)
+
+
+def validate_output_dir() -> None:
+    """Vérifie qu'OUTPUT_DIR est utilisable AVANT de lancer un export.
+
+    Sur un partage vmhgfs / SMB / cloud, le mount peut sauter silencieusement.
+    On échoue tôt avec un message clair plutôt qu'un cryptique IOError 30 s plus tard.
+    À appeler explicitement depuis load.py (pas à l'import, sinon les modules
+    de monitoring qui doivent tourner en mode dégradé planteraient aussi).
+    """
+    if not OUTPUT_DIR.exists():
+        raise RuntimeError(
+            f"❌ OUTPUT_DIR introuvable : {OUTPUT_DIR}\n"
+            f"   Vérifie le mount  : `mount | grep hgfs`\n"
+            f"   Vérifie le parent : `ls -la {OUTPUT_DIR.parent}`"
+        )
+    probe = OUTPUT_DIR / ".sds_write_probe"
+    try:
+        probe.write_text("ok", encoding="utf-8")
+        probe.unlink()
+    except OSError as e:
+        raise RuntimeError(
+            f"❌ OUTPUT_DIR non inscriptible : {OUTPUT_DIR}\n"
+            f"   Erreur : {e}\n"
+            f"   Pistes : permissions UID/GID du mount, ou fichier .xlsx "
+            f"actuellement ouvert dans Excel côté Windows."
+        )
 
 # ─── Base de données ─────────────────────────────────────────────────────
 DATABASE_URL = os.getenv(

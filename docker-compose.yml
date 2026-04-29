@@ -69,6 +69,7 @@ services:
       SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL:-}
       SLACK_ALERTS_WEBHOOK_URL: ${SLACK_ALERTS_WEBHOOK_URL:-}
       PROJECT_PATH: ${PROJECT_PATH}
+      OUTPUT_DIR_HOST: ${OUTPUT_DIR_HOST:-${PROJECT_PATH}/output}
       database_url: ${KESTRA_DATABASE_URL}
       database_url_jdbc: ${KESTRA_DATABASE_URL_JDBC}
       postgres_user: ${POSTGRES_USER:-sds}
@@ -77,6 +78,7 @@ services:
       slack_webhook_url: ${SLACK_WEBHOOK_URL:-}
       slack_alerts_webhook_url: ${SLACK_ALERTS_WEBHOOK_URL:-}
       project_path: ${PROJECT_PATH}
+      output_dir_host: ${OUTPUT_DIR_HOST:-${PROJECT_PATH}/output}
       KESTRA_CONFIGURATION: |
         kestra:
           plugins:
@@ -99,6 +101,7 @@ services:
               slack_webhook_url:        "${SLACK_WEBHOOK_URL:-}"
               slack_alerts_webhook_url: "${SLACK_ALERTS_WEBHOOK_URL:-}"
               project_path:             "${PROJECT_PATH}"
+              output_dir_host:          "${OUTPUT_DIR_HOST:-${PROJECT_PATH}/output}"
           server:
             basic-auth:
               enabled: false
@@ -125,7 +128,7 @@ services:
     environment:
       DATABASE_URL: "postgresql+psycopg://${POSTGRES_USER:-sds}:${POSTGRES_PASSWORD:-changeme_in_env}@postgres:5432/${POSTGRES_DB:-sds_poc}"
     volumes:
-      - ./output:/app/output
+      - ${OUTPUT_DIR_HOST:-./output}:/app/output
       - ./monitoring:/app/monitoring
     depends_on:
       postgres: { condition: service_healthy }
